@@ -1,7 +1,6 @@
 -- ============================================================
--- N4 SIMPLE UI — single-file build
+-- N4 SIMPLE UI — single-file build (MOBILE FIXED)
 -- Load: loadstring(game:HttpGet("URL_RAW"))()
--- Test: Delta Executor (mobile)
 -- ============================================================
 
 if not game:IsLoaded() then game.Loaded:Wait() end
@@ -15,20 +14,16 @@ local TS         = game:GetService("TweenService")
 local LP = Players.LocalPlayer
 local PG = LP:WaitForChild("PlayerGui")
 
--- ============================================================
--- PALETTE
--- ============================================================
 local C = {
     BG        = Color3.fromRGB(10, 10, 14),
     BG2       = Color3.fromRGB(16, 16, 22),
-    BG3       = Color3.fromRGB(22, 22, 30),
-    BORDER    = Color3.fromRGB(40, 40, 55),
+    BG3       = Color3.fromRGB(25, 25, 35),
+    BORDER    = Color3.fromRGB(45, 45, 65),
     TEXT      = Color3.fromRGB(230, 230, 240),
     TEXT_DIM  = Color3.fromRGB(150, 150, 165),
     NEON_A    = Color3.fromRGB(0, 245, 255),
     NEON_B    = Color3.fromRGB(180, 60, 255),
     NEON_C    = Color3.fromRGB(255, 60, 200),
-    GREEN     = Color3.fromRGB(0, 230, 130),
     RED       = Color3.fromRGB(255, 70, 90),
     FONT      = Enum.Font.Code,
     FONT_BOLD = Enum.Font.Code,
@@ -41,9 +36,6 @@ local NEON_SEQ = ColorSequence.new({
     ColorSequenceKeypoint.new(1.00, C.NEON_A),
 })
 
--- ============================================================
--- HELPERS
--- ============================================================
 local function getGUIParent()
     local sg = Instance.new("ScreenGui")
     sg.Name = "N4Simple"
@@ -51,11 +43,13 @@ local function getGUIParent()
     sg.IgnoreGuiInset = true
     sg.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
     sg.DisplayOrder = 9999
+    
     if syn and syn.protect_gui then
         pcall(syn.protect_gui, sg)
         sg.Parent = game:GetService("CoreGui")
         return sg
     end
+    
     local ok, hui = pcall(function() return gethui and gethui() end)
     if ok and hui then sg.Parent = hui else sg.Parent = PG end
     return sg
@@ -85,9 +79,6 @@ local function new(class, props, parent)
     return i
 end
 
--- ============================================================
--- N4 CORE
--- ============================================================
 local N4 = {}
 N4._neon = {}
 
@@ -108,27 +99,30 @@ task.spawn(function()
     end)
 end)
 
--- ============================================================
--- WINDOW
--- ============================================================
 function N4.new(opts)
     opts = opts or {}
     local self = {}
     self.Tabs      = {}
     self.ActiveTab = nil
-    self.Size      = opts.Size or UDim2.fromOffset(660, 440)
+    self.Size      = opts.Size or UDim2.fromOffset(520, 380)
 
     local sg = getGUIParent()
     self.Gui = sg
 
+    -- ROOT (Centered & Scaled)
     local root = new("Frame", {
         Name = "Root",
         Size = self.Size,
-        Position = UDim2.new(0.5, -self.Size.X.Offset / 2, 0.5, -self.Size.Y.Offset / 2),
+        AnchorPoint = Vector2.new(0.5, 0.5),
+        Position = UDim2.fromScale(0.5, 0.5),
         BackgroundColor3 = Color3.new(1, 1, 1),
         BorderSizePixel = 0,
     }, sg)
-    corner(root, 9)
+    corner(root, 8)
+
+    local uiscale = new("UIScale", { Parent = root })
+    if UIS.TouchEnabled then uiscale.Scale = 0.85 end -- Perkecil di HP
+
     local rootGrad = new("UIGradient", { Parent = root })
     registerNeon(rootGrad, 0.35)
 
@@ -139,15 +133,19 @@ function N4.new(opts)
         BackgroundColor3 = C.BG,
         BorderSizePixel = 0,
     }, root)
-    corner(inner, 8)
+    corner(inner, 7)
 
+    local mainLayout = new("UIListLayout", { SortOrder = Enum.SortOrder.LayoutOrder, Parent = inner })
+
+    -- TITLE BAR
     local titleBar = new("Frame", {
         Size = UDim2.new(1, 0, 0, 36),
         BackgroundColor3 = C.BG2,
         BorderSizePixel = 0,
+        LayoutOrder = 1,
         ZIndex = 2,
     }, inner)
-    corner(titleBar, 8)
+    corner(titleBar, 7)
     new("Frame", {
         Size = UDim2.new(1, 0, 0, 10),
         Position = UDim2.new(0, 0, 1, -10),
@@ -164,7 +162,6 @@ function N4.new(opts)
         ZIndex = 3,
     }, titleBar)
     corner(dot, 999)
-    stroke(dot, C.NEON_A, 1, 0.3)
 
     new("TextLabel", {
         Size = UDim2.new(0, 200, 1, 0),
@@ -205,12 +202,6 @@ function N4.new(opts)
         }, titleBar)
         corner(b, 4)
         stroke(b, C.BORDER, 1, 0.5)
-        b.MouseEnter:Connect(function()
-            TS:Create(b, TweenInfo.new(0.15), { BackgroundColor3 = C.BG2, TextColor3 = C.TEXT }):Play()
-        end)
-        b.MouseLeave:Connect(function()
-            TS:Create(b, TweenInfo.new(0.15), { BackgroundColor3 = C.BG3, TextColor3 = color or C.TEXT_DIM }):Play()
-        end)
         b.MouseButton1Click:Connect(onClick)
         return b
     end
@@ -225,20 +216,33 @@ function N4.new(opts)
         BorderSizePixel = 0,
         ZIndex = 4,
     }, titleBar)
-    local tlGrad = new("UIGradient", { Parent = topLine })
-    registerNeon(tlGrad, 0.6)
+    registerNeon(new("UIGradient", { Parent = topLine }), 0.6)
+
+    -- MIDDLE AREA (Sidebar + Content)
+    local middle = new("Frame", {
+        Size = UDim2.new(1, 0, 1, -58), -- 36 title + 22 status
+        BackgroundTransparency = 1,
+        LayoutOrder = 2,
+        ZIndex = 1,
+    }, inner)
+
+    new("UIListLayout", {
+        FillDirection = Enum.FillDirection.Horizontal,
+        SortOrder = Enum.SortOrder.LayoutOrder,
+        Parent = middle,
+    })
 
     local sidebar = new("Frame", {
-        Size = UDim2.new(0, 150, 1, -36),
-        Position = UDim2.new(0, 0, 0, 36),
+        Size = UDim2.new(0, 130, 1, 0),
         BackgroundColor3 = C.BG2,
         BorderSizePixel = 0,
+        LayoutOrder = 1,
         ZIndex = 2,
-    }, inner)
+    }, middle)
 
     new("Frame", {
         Size = UDim2.new(0, 1, 1, 0),
-        Position = UDim2.new(0, 150, 0, 0),
+        Position = UDim2.new(1, 0, 0, 0),
         BackgroundColor3 = C.BORDER,
         BorderSizePixel = 0,
         ZIndex = 3,
@@ -250,30 +254,26 @@ function N4.new(opts)
         BackgroundTransparency = 1,
         ZIndex = 3,
     }, sidebar)
-    new("UIListLayout", {
-        Padding = UDim.new(0, 4),
-        SortOrder = Enum.SortOrder.LayoutOrder,
-        Parent = tabList,
-    })
+    new("UIListLayout", { Padding = UDim.new(0, 4), SortOrder = Enum.SortOrder.LayoutOrder, Parent = tabList })
 
     local content = new("Frame", {
-        Size = UDim2.new(1, -151, 1, -36 - 22),
-        Position = UDim2.new(0, 151, 0, 36),
+        Size = UDim2.new(1, -130, 1, 0),
         BackgroundColor3 = C.BG,
         BorderSizePixel = 0,
+        LayoutOrder = 2,
         ZIndex = 2,
-    }, inner)
+    }, middle)
 
+    -- STATUS BAR
     local statusBar = new("Frame", {
         Size = UDim2.new(1, 0, 0, 22),
-        Position = UDim2.new(0, 0, 1, -22),
         BackgroundColor3 = C.BG2,
         BorderSizePixel = 0,
+        LayoutOrder = 3,
         ZIndex = 3,
     }, inner)
     new("Frame", {
         Size = UDim2.new(1, 0, 0, 1),
-        Position = UDim2.new(0, 0, 0, 0),
         BackgroundColor3 = C.BORDER,
         BorderSizePixel = 0,
     }, statusBar)
@@ -289,12 +289,11 @@ function N4.new(opts)
         TextXAlignment = Enum.TextXAlignment.Left,
     }, statusBar)
 
-    -- drag
+    -- DRAG
     do
         local dragging, dragStart, startPos = false, nil, nil
         titleBar.InputBegan:Connect(function(i)
-            if i.UserInputType == Enum.UserInputType.MouseButton1
-                or i.UserInputType == Enum.UserInputType.Touch then
+            if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
                 dragging, dragStart, startPos = true, i.Position, root.Position
                 i.Changed:Connect(function()
                     if i.UserInputState == Enum.UserInputState.End then dragging = false end
@@ -302,24 +301,17 @@ function N4.new(opts)
             end
         end)
         UIS.InputChanged:Connect(function(i)
-            if dragging and (i.UserInputType == Enum.UserInputType.MouseMovement
-                or i.UserInputType == Enum.UserInputType.Touch) then
+            if dragging and (i.UserInputType == Enum.UserInputType.MouseMovement or i.UserInputType == Enum.UserInputType.Touch) then
                 local d = i.Position - dragStart
-                root.Position = UDim2.new(
-                    startPos.X.Scale, startPos.X.Offset + d.X,
-                    startPos.Y.Scale, startPos.Y.Offset + d.Y)
+                root.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + d.X, startPos.Y.Scale, startPos.Y.Offset + d.Y)
             end
         end)
     end
 
-    self.Root    = root
-    self.Inner   = inner
-    self.Content = content
+    self.Root, self.Inner, self.Content = root, inner, content
 
     function self:Tab(name)
-        local tab = {}
-        tab.Name = name
-        tab._order = 0
+        local tab = { Name = name, _order = 0 }
         tab._nextOrder = function() tab._order = tab._order + 1; return tab._order end
 
         local btn = new("TextButton", {
@@ -356,32 +348,18 @@ function N4.new(opts)
             ScrollBarThickness = 4,
             ScrollBarImageColor3 = C.BORDER,
             CanvasSize = UDim2.new(0, 0, 0, 0),
-            AutomaticCanvasSize = Enum.AutomaticSize.Y,
             Visible = false,
             ZIndex = 3,
         }, content)
-        new("UIListLayout", {
-            Padding = UDim.new(0, 6),
-            SortOrder = Enum.SortOrder.LayoutOrder,
-            Parent = pane,
-        })
+        
+        local paneLayout = new("UIListLayout", { Padding = UDim.new(0, 6), SortOrder = Enum.SortOrder.LayoutOrder, Parent = pane })
+        paneLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+            pane.CanvasSize = UDim2.new(0, 0, 0, paneLayout.AbsoluteContentSize.Y + 10)
+        end)
 
-        btn.MouseEnter:Connect(function()
-            if self.ActiveTab ~= tab then
-                TS:Create(btn, TweenInfo.new(0.15), { TextColor3 = C.TEXT, BackgroundTransparency = 0.5 }):Play()
-            end
-        end)
-        btn.MouseLeave:Connect(function()
-            if self.ActiveTab ~= tab then
-                TS:Create(btn, TweenInfo.new(0.15), { TextColor3 = C.TEXT_DIM, BackgroundTransparency = 1 }):Play()
-            end
-        end)
         btn.MouseButton1Click:Connect(function() self:SelectTab(tab) end)
 
-        tab.Button    = btn
-        tab.Indicator = indicator
-        tab.Pane      = pane
-
+        tab.Button, tab.Indicator, tab.Pane = btn, indicator, pane
         N4.AttachWidgets(tab)
 
         table.insert(self.Tabs, tab)
@@ -403,21 +381,15 @@ function N4.new(opts)
     end
 
     function self:SetStatus(text)
-        if self.StatusLbl then
-            self.StatusLbl.Text = "◆ " .. tostring(text)
-        end
+        if self.StatusLbl then self.StatusLbl.Text = "◆ " .. tostring(text) end
     end
 
     return self
 end
 
--- ============================================================
--- WIDGETS
--- ============================================================
 function N4.AttachWidgets(tab)
     local pane = tab.Pane
-    local nextOrder = tab._nextOrder
-        or (function() tab._order = (tab._order or 0) + 1; return tab._order end)
+    local nextOrder = tab._nextOrder or (function() tab._order = (tab._order or 0) + 1; return tab._order end)
 
     function tab:Section(title)
         local holder = new("Frame", {
@@ -426,11 +398,8 @@ function N4.AttachWidgets(tab)
             LayoutOrder = nextOrder(),
         }, pane)
         holder.AutomaticSize = Enum.AutomaticSize.Y
-        local hl = new("UIListLayout", {
-            Padding = UDim.new(0, 4),
-            SortOrder = Enum.SortOrder.LayoutOrder,
-            Parent = holder,
-        })
+        
+        local hl = new("UIListLayout", { Padding = UDim.new(0, 4), SortOrder = Enum.SortOrder.LayoutOrder, Parent = holder })
         hl:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
             holder.Size = UDim2.new(1, 0, 0, hl.AbsoluteContentSize.Y)
         end)
@@ -456,11 +425,8 @@ function N4.AttachWidgets(tab)
             LayoutOrder = 1,
         }, holder)
         body.AutomaticSize = Enum.AutomaticSize.Y
-        local bl = new("UIListLayout", {
-            Padding = UDim.new(0, 4),
-            SortOrder = Enum.SortOrder.LayoutOrder,
-            Parent = body,
-        })
+        
+        local bl = new("UIListLayout", { Padding = UDim.new(0, 4), SortOrder = Enum.SortOrder.LayoutOrder, Parent = body })
         bl:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
             body.Size = UDim2.new(1, 0, 0, bl.AbsoluteContentSize.Y)
         end)
@@ -471,18 +437,9 @@ function N4.AttachWidgets(tab)
             body.Visible = expanded
             hdr.Text = "  " .. (expanded and "▾" or "▸") .. "  " .. title
         end)
-        hdr.MouseEnter:Connect(function()
-            TS:Create(hdr, TweenInfo.new(0.15), { BackgroundColor3 = C.BG2 }):Play()
-        end)
-        hdr.MouseLeave:Connect(function()
-            TS:Create(hdr, TweenInfo.new(0.15), { BackgroundColor3 = C.BG3 }):Play()
-        end)
 
         local sub = { Pane = body, _order = 0 }
-        function sub._nextOrder()
-            sub._order = sub._order + 1
-            return sub._order
-        end
+        function sub._nextOrder() sub._order = sub._order + 1; return sub._order end
         N4.AttachWidgets(sub)
         return sub
     end
@@ -499,7 +456,7 @@ function N4.AttachWidgets(tab)
         local st = stroke(row, C.BORDER, 1, 0.6)
 
         new("TextLabel", {
-            Size = UDim2.new(0.6, 0, 0, 16),
+            Size = UDim2.new(0.65, 0, 0, 16),
             Position = UDim2.fromOffset(10, 6),
             BackgroundTransparency = 1,
             Font = C.FONT,
@@ -511,7 +468,7 @@ function N4.AttachWidgets(tab)
         }, row)
         if desc then
             new("TextLabel", {
-                Size = UDim2.new(0.6, 0, 0, 12),
+                Size = UDim2.new(0.65, 0, 0, 12),
                 Position = UDim2.fromOffset(10, 22),
                 BackgroundTransparency = 1,
                 Font = C.FONT,
@@ -522,20 +479,12 @@ function N4.AttachWidgets(tab)
                 TextTruncate = Enum.TextTruncate.AtEnd,
             }, row)
         end
-        row.MouseEnter:Connect(function()
-            TS:Create(row, TweenInfo.new(0.15), { BackgroundColor3 = C.BG2 }):Play()
-            st.Transparency = 0.4
-        end)
-        row.MouseLeave:Connect(function()
-            TS:Create(row, TweenInfo.new(0.15), { BackgroundColor3 = C.BG3 }):Play()
-            st.Transparency = 0.6
-        end)
         return row
     end
 
     function tab:Paragraph(text)
         local row = new("Frame", {
-            Size = UDim2.new(1, 0, 0, 44),
+            Size = UDim2.new(1, 0, 0, 40),
             BackgroundColor3 = C.BG3,
             BackgroundTransparency = 0.5,
             BorderSizePixel = 0,
@@ -547,7 +496,7 @@ function N4.AttachWidgets(tab)
 
         local lbl = new("TextLabel", {
             Size = UDim2.new(1, -20, 0, 0),
-            Position = UDim2.fromOffset(10, 6),
+            Position = UDim2.fromOffset(10, 8),
             BackgroundTransparency = 1,
             Font = C.FONT,
             Text = text or "",
@@ -558,15 +507,10 @@ function N4.AttachWidgets(tab)
             TextWrapped = true,
             AutomaticSize = Enum.AutomaticSize.Y,
         }, row)
-        new("UIPadding", {
-            PaddingTop = UDim.new(0, 6),
-            PaddingBottom = UDim.new(0, 6),
-            Parent = row,
-        })
+        new("UIPadding", { PaddingBottom = UDim.new(0, 8), Parent = row })
 
         local api = {}
         function api:Set(t) lbl.Text = tostring(t or "") end
-        function api:Get() return lbl.Text end
         return api
     end
 
@@ -604,22 +548,14 @@ function N4.AttachWidgets(tab)
         corner(bar, 2)
 
         row.MouseEnter:Connect(function()
-            TS:Create(row, TweenInfo.new(0.15), {
-                BackgroundColor3 = opts.Danger and Color3.fromRGB(85, 26, 32) or C.BG2
-            }):Play()
-            st.Transparency = 0.2
+            TS:Create(row, TweenInfo.new(0.15), { BackgroundColor3 = opts.Danger and Color3.fromRGB(85, 26, 32) or C.BG2 }):Play()
             TS:Create(bar, TweenInfo.new(0.15), { BackgroundTransparency = 0 }):Play()
         end)
         row.MouseLeave:Connect(function()
-            TS:Create(row, TweenInfo.new(0.15), {
-                BackgroundColor3 = opts.Danger and Color3.fromRGB(60, 20, 25) or C.BG3
-            }):Play()
-            st.Transparency = 0.5
+            TS:Create(row, TweenInfo.new(0.15), { BackgroundColor3 = opts.Danger and Color3.fromRGB(60, 20, 25) or C.BG3 }):Play()
             TS:Create(bar, TweenInfo.new(0.15), { BackgroundTransparency = 1 }):Play()
         end)
-        row.MouseButton1Click:Connect(function()
-            pcall(callback)
-        end)
+        row.MouseButton1Click:Connect(function() pcall(callback) end)
         return row
     end
 
@@ -632,7 +568,7 @@ function N4.AttachWidgets(tab)
             BorderSizePixel = 0,
         }, row)
         corner(sw, 9)
-        local swStroke = stroke(sw, C.BORDER, 1, 0.3)
+        stroke(sw, C.BORDER, 1, 0.3)
         local knob = new("Frame", {
             Size = UDim2.fromOffset(14, 14),
             Position = UDim2.fromOffset(2, 2),
@@ -645,27 +581,16 @@ function N4.AttachWidgets(tab)
         local function update()
             if state then
                 TS:Create(sw, TweenInfo.new(0.15), { BackgroundColor3 = C.BG2 }):Play()
-                swStroke.Color = C.NEON_A
-                swStroke.Transparency = 0.2
-                TS:Create(knob, TweenInfo.new(0.15), {
-                    Position = UDim2.fromOffset(22, 2),
-                    BackgroundColor3 = C.NEON_A
-                }):Play()
+                TS:Create(knob, TweenInfo.new(0.15), { Position = UDim2.fromOffset(22, 2), BackgroundColor3 = C.NEON_A }):Play()
             else
                 TS:Create(sw, TweenInfo.new(0.15), { BackgroundColor3 = C.BG }):Play()
-                swStroke.Color = C.BORDER
-                swStroke.Transparency = 0.3
-                TS:Create(knob, TweenInfo.new(0.15), {
-                    Position = UDim2.fromOffset(2, 2),
-                    BackgroundColor3 = C.TEXT_DIM
-                }):Play()
+                TS:Create(knob, TweenInfo.new(0.15), { Position = UDim2.fromOffset(2, 2), BackgroundColor3 = C.TEXT_DIM }):Play()
             end
         end
         update()
 
         row.InputBegan:Connect(function(i)
-            if i.UserInputType == Enum.UserInputType.MouseButton1
-                or i.UserInputType == Enum.UserInputType.Touch then
+            if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
                 state = not state
                 update()
                 if callback then pcall(callback, state) end
@@ -674,7 +599,6 @@ function N4.AttachWidgets(tab)
 
         local api = {}
         function api:Set(v) state = v == true; update() end
-        function api:Get() return state end
         return api
     end
 
@@ -716,7 +640,6 @@ function N4.AttachWidgets(tab)
             ZIndex = 2,
         }, track)
         corner(knob, 999)
-        stroke(knob, C.BG, 2, 0)
 
         local val = default
         local function apply(v, fire)
@@ -732,20 +655,13 @@ function N4.AttachWidgets(tab)
 
         local dragging = false
         track.InputBegan:Connect(function(i)
-            if i.UserInputType == Enum.UserInputType.MouseButton1
-                or i.UserInputType == Enum.UserInputType.Touch then
-                dragging = true
-            end
+            if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then dragging = true end
         end)
         UIS.InputEnded:Connect(function(i)
-            if i.UserInputType == Enum.UserInputType.MouseButton1
-                or i.UserInputType == Enum.UserInputType.Touch then
-                dragging = false
-            end
+            if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then dragging = false end
         end)
         UIS.InputChanged:Connect(function(i)
-            if dragging and (i.UserInputType == Enum.UserInputType.MouseMovement
-                or i.UserInputType == Enum.UserInputType.Touch) then
+            if dragging and (i.UserInputType == Enum.UserInputType.MouseMovement or i.UserInputType == Enum.UserInputType.Touch) then
                 local rel = (i.Position.X - track.AbsolutePosition.X) / math.max(1, track.AbsoluteSize.X)
                 apply(min + (max - min) * math.clamp(rel, 0, 1), true)
             end
@@ -753,7 +669,6 @@ function N4.AttachWidgets(tab)
 
         local api = {}
         function api:Set(v) apply(v, false) end
-        function api:Get() return val end
         return api
     end
 
@@ -786,13 +701,8 @@ function N4.AttachWidgets(tab)
             corner(dropdown, 4)
             stroke(dropdown, C.NEON_A, 1, 0.4)
             new("UIListLayout", { Padding = UDim.new(0, 2), Parent = dropdown })
-            new("UIPadding", {
-                PaddingTop = UDim.new(0, 4),
-                PaddingBottom = UDim.new(0, 4),
-                PaddingLeft = UDim.new(0, 4),
-                PaddingRight = UDim.new(0, 4),
-                Parent = dropdown,
-            })
+            new("UIPadding", { PaddingTop = UDim.new(0, 4), PaddingBottom = UDim.new(0, 4), PaddingLeft = UDim.new(0, 4), PaddingRight = UDim.new(0, 4), Parent = dropdown })
+            
             for i, v in ipairs(values) do
                 local item = new("TextButton", {
                     Size = UDim2.new(1, 0, 0, 22),
@@ -808,12 +718,6 @@ function N4.AttachWidgets(tab)
                     ZIndex = 51,
                 }, dropdown)
                 corner(item, 3)
-                item.MouseEnter:Connect(function()
-                    TS:Create(item, TweenInfo.new(0.1), { BackgroundColor3 = C.BG, TextColor3 = C.NEON_A }):Play()
-                end)
-                item.MouseLeave:Connect(function()
-                    TS:Create(item, TweenInfo.new(0.1), { BackgroundColor3 = C.BG3, TextColor3 = C.TEXT }):Play()
-                end)
                 item.MouseButton1Click:Connect(function()
                     current = v
                     valueLbl.Text = tostring(v) .. "  ▾"
@@ -825,68 +729,24 @@ function N4.AttachWidgets(tab)
         buildList()
 
         row.InputBegan:Connect(function(i)
-            if i.UserInputType == Enum.UserInputType.MouseButton1
-                or i.UserInputType == Enum.UserInputType.Touch then
+            if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
                 dropdown.Visible = not dropdown.Visible
             end
         end)
 
         local api = {}
-        function api:Set(v)
-            current = v
-            valueLbl.Text = tostring(v) .. "  ▾"
-        end
-        function api:Get() return current end
+        function api:Set(v) current = v; valueLbl.Text = tostring(v) .. "  ▾" end
         return api
     end
-
-    function tab:Input(title, default, placeholder, callback)
-        local row = makeRow(title, nil, 32)
-        local box = new("TextBox", {
-            Size = UDim2.new(0.45, 0, 0, 20),
-            Position = UDim2.new(1, -10, 0.5, -10),
-            BackgroundColor3 = C.BG,
-            BorderSizePixel = 0,
-            Font = C.FONT,
-            Text = default or "",
-            PlaceholderText = placeholder or "",
-            PlaceholderColor3 = C.TEXT_DIM,
-            TextSize = 11,
-            TextColor3 = C.TEXT,
-            ClearTextOnFocus = false,
-            TextXAlignment = Enum.TextXAlignment.Left,
-        }, row)
-        corner(box, 3)
-        stroke(box, C.BORDER, 1, 0.3)
-        new("UIPadding", {
-            PaddingLeft = UDim.new(0, 6),
-            PaddingRight = UDim.new(0, 6),
-            Parent = box,
-        })
-        box.Focused:Connect(function()
-            TS:Create(box, TweenInfo.new(0.15), { BackgroundColor3 = C.BG2 }):Play()
-        end)
-        box.FocusLost:Connect(function()
-            TS:Create(box, TweenInfo.new(0.15), { BackgroundColor3 = C.BG }):Play()
-            if callback then pcall(callback, box.Text) end
-        end)
-
-        local api = {}
-        function api:Set(v) box.Text = tostring(v) end
-        function api:Get() return box.Text end
-        return api
-    end
-
-    return tab
 end
 
 -- ============================================================
--- BUILD UI
+-- JALANKAN UI
 -- ============================================================
 local ui = N4.new({
     Title    = "N4 Rebuild",
-    Subtitle = "v0.1",
-    Size     = UDim2.fromOffset(660, 440),
+    Subtitle = "v0.2 Mobile",
+    Size     = UDim2.fromOffset(520, 380),
 })
 
 local farm = ui:Tab("Farm")
@@ -897,46 +757,28 @@ end)
 main:Slider("Speed (ms)", 50, 500, 220, function(v)
     ui:SetStatus("Speed: " .. v .. " ms")
 end)
-main:Slider("Multi target", 1, 5, 1, function(v) end, "Tile dipukul bergantian")
 main:Dropdown("Mode", { "Place + Break", "Break only", "Place only" }, "Place + Break", function(v)
     ui:SetStatus("Mode: " .. v)
 end)
 
-local block = farm:Section("Block")
-block:Dropdown("Pilih block", { "Dirt", "Stone", "Wood" }, "Dirt", function(v) end)
-block:Button("Refresh daftar", function()
-    ui:SetStatus("Refreshing...")
-end)
-
 local set = ui:Tab("Settings")
-local misc = set:Section("Karakter")
-misc:Toggle("Infinite Jump", false, function(v) end)
-misc:Toggle("Fly + Noclip", false, function(v) end, "Bisa kena rollback")
-misc:Slider("Walkspeed %", 50, 500, 100, function(v) end)
-
-local info = set:Section("Info")
-info:Paragraph("N4 Rebuild — IMGUI + neon running.\nTekan Insert / RShift untuk sembunyikan, atau tombol [N4] di kanan atas.")
+set:Toggle("Infinite Jump", false, function(v) end)
+set:Slider("Walkspeed %", 50, 500, 100, function(v) end)
 
 local cons = ui:Tab("Console")
 local log = cons:Paragraph("◆ " .. os.date("%H:%M:%S") .. "  ready")
 cons:Button("Log sesuatu", function()
     log:Set("◆ " .. os.date("%H:%M:%S") .. "  tombol ditekan")
-end)
-cons:Button("Reset UI", function()
-    ui:SetStatus("Reset")
 end, { Danger = true })
 
-ui:SetStatus("UI siap")
+ui:SetStatus("Siap digunakan")
 
--- ============================================================
--- MOBILE TOGGLE BUTTON (pojok kanan atas)
--- ============================================================
+-- Tombol Toggle Mobile
 local toggleGui = Instance.new("ScreenGui")
 toggleGui.Name = "N4Toggle"
 toggleGui.ResetOnSpawn = false
 toggleGui.IgnoreGuiInset = true
 toggleGui.DisplayOrder = 10000
-
 local okH, hui = pcall(function() return gethui and gethui() end)
 toggleGui.Parent = (okH and hui) or PG
 
@@ -951,50 +793,14 @@ btn.TextColor3 = Color3.fromRGB(0, 245, 255)
 btn.BorderSizePixel = 0
 btn.AutoButtonColor = false
 btn.Parent = toggleGui
-
-local c1 = Instance.new("UICorner", btn)
-c1.CornerRadius = UDim.new(1, 0)
-
+Instance.new("UICorner", btn).CornerRadius = UDim.new(1, 0)
 local s1 = Instance.new("UIStroke", btn)
 s1.Color = Color3.fromRGB(0, 245, 255)
 s1.Thickness = 2
-
-local uig = Instance.new("UIGradient", s1)
-uig.Color = NEON_SEQ
+Instance.new("UIGradient", s1).Color = NEON_SEQ
 
 btn.MouseButton1Click:Connect(function()
     ui.Root.Visible = not ui.Root.Visible
-end)
-
--- drag tombol toggle
-do
-    local dragging, dragStart, startPos = false, nil, nil
-    btn.InputBegan:Connect(function(i)
-        if i.UserInputType == Enum.UserInputType.MouseButton1
-            or i.UserInputType == Enum.UserInputType.Touch then
-            dragging, dragStart, startPos = true, i.Position, btn.Position
-            i.Changed:Connect(function()
-                if i.UserInputState == Enum.UserInputState.End then dragging = false end
-            end)
-        end
-    end)
-    UIS.InputChanged:Connect(function(i)
-        if dragging and (i.UserInputType == Enum.UserInputType.MouseMovement
-            or i.UserInputType == Enum.UserInputType.Touch) then
-            local d = i.Position - dragStart
-            btn.Position = UDim2.new(
-                startPos.X.Scale, startPos.X.Offset + d.X,
-                startPos.Y.Scale, startPos.Y.Offset + d.Y)
-        end
-    end)
-end
-
--- keyboard toggle (PC)
-UIS.InputBegan:Connect(function(i, gp)
-    if gp then return end
-    if i.KeyCode == Enum.KeyCode.Insert or i.KeyCode == Enum.KeyCode.RightShift then
-        ui.Root.Visible = not ui.Root.Visible
-    end
 end)
 
 print("[N4] UI loaded — tekan tombol N4 atau Insert untuk toggle")
