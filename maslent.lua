@@ -9453,33 +9453,8 @@ flyButton("▼", 40, function(v) Misc.DownHeld = v end)
 ---------------------------------------------------------------------
 -- UI WINDUI
 ---------------------------------------------------------------------
--- Tema custom Nusantara: merah-putih, kontras tinggi, dan panel padat bergaya IMGUI.
-pcall(function()
-    WindUI:AddTheme({
-        Name = "Nusantara",
-        Accent = Color3.fromHex("#8E1421"),
-        Dialog = Color3.fromHex("#241013"),
-        Outline = Color3.fromHex("#D63245"),
-        Text = Color3.fromHex("#FFFFFF"),
-        Placeholder = Color3.fromHex("#B9A8AA"),
-        Background = Color3.fromHex("#120A0C"),
-        Button = Color3.fromHex("#A51E2D"),
-        Icon = Color3.fromHex("#F5EDEE"),
-        Toggle = Color3.fromHex("#D63245"),
-        Slider = Color3.fromHex("#D63245"),
-        Checkbox = Color3.fromHex("#D63245"),
-        PanelBackground = Color3.fromHex("#FFFFFF"),
-        PanelBackgroundTransparency = 0.94,
-        SliderIcon = Color3.fromHex("#E8C9CD"),
-        Primary = Color3.fromHex("#D63245"),
-        LabelBackground = Color3.fromHex("#000000"),
-        LabelBackgroundTransparency = 0.78,
-        ElementBackground = Color3.fromHex("#271518"),
-        ElementBackgroundTransparency = 0,
-    })
-    WindUI:SetTheme("Nusantara")
-    WindUI:SetFont(Enum.Font.Gotham)
-end)
+-- Font aman: bila versi WindUI tidak mendukung penggantian font, menu tetap dibuat.
+pcall(function() WindUI:SetFont(Enum.Font.Gotham) end)
 
 -- Pilih bahasa saat execute (sebelum menu dibuat, karena teks menu dipasang sekali)
 do (function()
@@ -9500,7 +9475,7 @@ do (function()
     local ok = pcall(function()
         WindUI:Popup({
             Title = "Nusantara Project",
-            Icon = "flag",
+            Icon = "heart",
             Content = "Pilih bahasa menu\nChoose menu language",
             Buttons = {
                 { Title = "Indonesia", Variant = I18N.Lang == "id" and "Primary" or "Secondary",
@@ -9520,11 +9495,11 @@ end)() end
 Session.InitStep = "membuat menu WindUI"
 local Window = I18N.wrap(WindUI:CreateWindow({
     Title = "Nusantara Project",
-    Icon = "flag",
+    Icon = "heart",
     Author = "Indonesia • Professional UI",
     Folder = "n4thOpus",
     Size = UDim2.fromOffset(700, 460),
-    Theme = "Nusantara",
+    Theme = "Rose",
     Transparent = false,
     SideBarWidth = 190,
     ToggleKey = Enum.KeyCode.Insert,  -- PC: tekan Insert untuk buka/tutup menu
@@ -9535,7 +9510,7 @@ UI.Window = Window
 pcall(function()
     Window:EditOpenButton({
         Title = "Nusantara",
-        Icon = "flag",
+        Icon = "heart",
         Draggable = true,
         OnlyMobile = false,
     })
@@ -9550,10 +9525,10 @@ end
 -- Sidebar dikelompokkan: grup utama bisa dibuka / ditutup (isinya tab-tab)
 local Groups = {}
 for _, g in ipairs({
-    { key = "farm", title = "OPERASI", icon = "layout-dashboard", opened = true },
-    { key = "fitur", title = "UTILITAS", icon = "command" },
-    { key = "aman", title = "KEAMANAN", icon = "shield-check" },
-    { key = "setel", title = "KONFIGURASI", icon = "sliders-horizontal" },
+    { key = "farm", title = "OPERASI", icon = "sprout", opened = true },
+    { key = "fitur", title = "UTILITAS", icon = "sparkles" },
+    { key = "aman", title = "KEAMANAN", icon = "shield" },
+    { key = "setel", title = "KONFIGURASI", icon = "settings" },
 }) do
     local ok, sec = pcall(function()
         return Window:Section({ Title = g.title, Icon = g.icon, Opened = g.opened == true })
@@ -9611,7 +9586,7 @@ local function addNumber(tab, o)
 end
 
 -- ===== TAB: FARM =====
-local FarmTab = makeTab("Farm", "layout-dashboard", "farm")
+local FarmTab = makeTab("Farm", "pickaxe", "farm")
 
 safe(function()
     UI.Status = FarmTab:Paragraph({ Title = "Status", Desc = "-" })
@@ -9761,7 +9736,7 @@ end)() end
 
 -- ===== TAB: AUTO DROP =====
 do (function()
-    local tab = makeTab("Auto Drop", "arrow-down-to-line", "farm")
+    local tab = makeTab("Auto Drop", "package-open", "farm")
     safe(function() UI.AutoDropStatus = tab:Paragraph({ Title = "Status", Desc = "-" }) end)
     local controls = box(tab, "Kontrol", true)
     local itemBox = box(tab, "Item", true)
@@ -9899,7 +9874,7 @@ do (function()
 end)() end
 
 -- ===== TAB: CLEAR WORLD =====
-local ClearTab = makeTab("Clear World", "brush-cleaning", "farm")
+local ClearTab = makeTab("Clear World", "eraser", "farm")
 
 safe(function()
     UI.ClearStatus = ClearTab:Paragraph({ Title = "Status Pembersihan", Desc = "-" })
@@ -9980,7 +9955,7 @@ safe(function()
 end)
 
 -- ===== TAB: FARMER =====
-local FarmerTab = makeTab("Farmer", "sprout", "farm")
+local FarmerTab = makeTab("Farmer", "leaf", "farm")
 
 safe(function()
     UI.FarmerStatus = FarmerTab:Paragraph({ Title = "Status Penanaman", Desc = "-" })
@@ -10135,7 +10110,7 @@ addNumber(SpeedTab, {
 })
 
 -- ===== TAB: PENGATURAN (Opsi + Misc digabung) =====
-local SetTab = makeTab("Pengaturan", "settings-2", "setel")
+local SetTab = makeTab("Pengaturan", "sliders-horizontal", "setel")
 Box.SetChar = box(SetTab, "Karakter", true)
 Box.SetOpt = box(SetTab, "Opsi", true)
 local OptTab = Box.SetOpt
@@ -10766,7 +10741,7 @@ Config.add("Penjaga", Guard, { "On", "Who", "StopAll", "Leave", "AutoBack", "Bac
 
 -- ===== TAB: PENJAGA =====
 do (function() -- fungsi sendiri: variabel di dalam tidak ikut batas 200 local
-    local GuardTab = makeTab("Penjaga", "shield-check", "aman")
+    local GuardTab = makeTab("Penjaga", "eye", "aman")
 
     safe(function()
         UI.GuardStatus = GuardTab:Paragraph({ Title = "Status perlindungan", Desc = "Mati" })
@@ -11030,7 +11005,7 @@ Config.add("Bonus", Bonus, { "Quest", "Redeem" })
 
 -- ===== TAB: BONUS =====
 do (function() -- fungsi sendiri: variabel di dalam tidak ikut batas 200 local
-    local BonusTab = makeTab("Bonus", "badge-gift", "fitur")
+    local BonusTab = makeTab("Bonus", "gift", "fitur")
     local bQuest = box(BonusTab, "Quest Harian", true)
     local bCode = box(BonusTab, "Redeem Code", true)
 
@@ -11320,7 +11295,7 @@ Config.add("Growscan", Scan, { "Auto", "Layer" })
 
 -- ===== TAB: GROWSCAN =====
 do (function() -- fungsi sendiri: variabel di dalam tidak ikut batas 200 local
-    local ScanTab = makeTab("Growscan", "scan-line", "fitur")
+    local ScanTab = makeTab("Growscan", "scan-search", "fitur")
 
     safe(function()
         UI.ScanInfo = ScanTab:Paragraph({ Title = "Informasi world", Desc = "Tekan Scan sekarang" })
@@ -11491,7 +11466,7 @@ end)() end
 
 -- ===== TAB: STATISTIK =====
 do (function()
-    local StatTab = makeTab("Statistik", "chart-no-axes-combined", "fitur")
+    local StatTab = makeTab("Statistik", "bar-chart-3", "fitur")
 
     safe(function()
         UI.StatsText = StatTab:Paragraph({ Title = "Sesi ini", Desc = "-" })
@@ -11665,7 +11640,7 @@ Config.add("Tas", Bag, { "TrashOn", "TrashList", "TrashAt", "Keep", "LockOn" })
 
 -- ===== TAB: TAS =====
 do (function()
-    local BagTab = makeTab("Tas", "briefcase", "fitur")
+    local BagTab = makeTab("Tas", "backpack", "fitur")
 
     safe(function()
         UI.BagStatus = BagTab:Paragraph({ Title = "Status", Desc = "-" })
@@ -11915,7 +11890,7 @@ Splice.Ms = math.max(Splice.Ms, 140)
 
 -- ===== TAB: SPLICE =====
 do (function()
-    local SpTab = makeTab("Splice", "git-branch", "farm")
+    local SpTab = makeTab("Splice", "git-merge", "farm")
 
     safe(function()
         UI.SpliceStatus = SpTab:Paragraph({ Title = "Status splice", Desc = "-" })
@@ -12019,7 +11994,7 @@ end)() end
 
 -- ===== TAB: LAHAN (bangun farm world) =====
 do (function()
-    local LTab = makeTab("Lahan", "land-plot", "farm")
+    local LTab = makeTab("Lahan", "layout-grid", "farm")
 
     safe(function()
         UI.LahanStatus = LTab:Paragraph({ Title = "Status Lahan", Desc = "-" })
@@ -13275,7 +13250,7 @@ end
 
 -- ===== TAB: WORLD FINDER =====
 do (function()
-    local tab = makeTab("World Finder", "search", "fitur")
+    local tab = makeTab("World Finder", "globe", "fitur")
     safe(function() UI.FinderStatus = tab:Paragraph({ Title = "Proses sekarang", Desc = WorldFinder.Status }) end)
     safe(function() UI.FinderLogs = tab:Paragraph({ Title = "Log terbaru", Desc = "Belum ada proses" }) end)
     safe(function()
@@ -13520,7 +13495,7 @@ do (function()
 end)() end
 
 -- ===== TAB: KONEKSI =====
-local ConnTab = makeTab("Koneksi", "plug-zap", "setel")
+local ConnTab = makeTab("Koneksi", "plug", "setel")
 
 safe(function()
     UI.RefInfo = ConnTab:Paragraph({ Title = "Referensi game", Desc = "-" })
@@ -13736,7 +13711,7 @@ end)() end
 
 -- ===== TAB: DISCORD =====
 do (function()
-    local DcTab = makeTab("Discord", "send", "setel")
+    local DcTab = makeTab("Discord", "bell", "setel")
 
     safe(function()
         UI.HookStatus = DcTab:Paragraph({ Title = "Status", Desc = Hook.Status })
